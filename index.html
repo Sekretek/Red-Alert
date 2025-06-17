@@ -2,56 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Rocket Trajectory over Israel</title>
+  <title>Rocket Trajectory</title>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     html, body, #cesiumContainer {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      font-family: sans-serif;
+      width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
     }
   </style>
 </head>
 <body>
 <div id="cesiumContainer"></div>
 <script>
-  // Инициализация Cesium Viewer без terrain и без токена
   const viewer = new Cesium.Viewer('cesiumContainer', {
     imageryProvider: new Cesium.UrlTemplateImageryProvider({
       url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-	  subdomains: ['a', 'b', 'c', 'd'],
-	  credit: new Cesium.Credit('© OpenStreetMap & Carto')
+      subdomains: ['a', 'b', 'c', 'd'],
+      credit: new Cesium.Credit('© OpenStreetMap & CartoDB')
     }),
     baseLayerPicker: false,
     shouldAnimate: true
   });
 
-  // Фокус камеры на Израиль
   viewer.camera.flyTo({
     destination: Cesium.Cartesian3.fromDegrees(34.8, 31.5, 1500000)
   });
 
-  // Генерация траектории ракеты
   const points = [];
   const startLon = 35.5, startLat = 33.5;
   const endLon = 34.8, endLat = 31.5;
   const steps = 100;
-
   for (let i = 0; i <= steps; i++) {
     const t = i / steps;
     const lon = startLon * (1 - t) + endLon * t;
     const lat = startLat * (1 - t) + endLat * t;
-    const height = 0 + 50000 * Math.sin(Math.PI * t); // дуга
+    const height = 0 + 50000 * Math.sin(Math.PI * t);
     points.push(Cesium.Cartesian3.fromDegrees(lon, lat, height));
   }
 
-  // Отображение линии траектории
   viewer.entities.add({
-    name: "Rocket Path",
     polyline: {
       positions: points,
       width: 5,
@@ -59,19 +49,15 @@
     }
   });
 
-  // Модель ракеты (конус)
   const rocket = viewer.entities.add({
-    name: "Rocket",
     position: points[0],
-    cylinder: {
-      length: 50000,
-      topRadius: 0,
-      bottomRadius: 10000,
-      material: Cesium.Color.GRAY
+    model: {
+      uri: 'Toy_Rocket.glb',
+      scale: 100.0,
+      minimumPixelSize: 64
     }
   });
 
-  // Анимация ракеты вдоль траектории
   let i = 0;
   setInterval(() => {
     if (i < points.length) {
