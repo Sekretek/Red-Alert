@@ -39,6 +39,7 @@
   <br><br>
   <label for="imagerySelect">Карта:</label><br>
   <select id="imagerySelect">
+    <option value="esri" selected>ESRI World Imagery</option>
     <option value="carto">CartoDB Light</option>
     <option value="osm">OpenStreetMap</option>
     <option value="stamen">Stamen Terrain</option>
@@ -47,6 +48,10 @@
 <div id="cesiumContainer"></div>
 <script>
   const imageryOptions = {
+    esri: new Cesium.UrlTemplateImageryProvider({
+      url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      credit: new Cesium.Credit('Tiles © Esri')
+    }),
     carto: new Cesium.UrlTemplateImageryProvider({
       url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
       subdomains: ['a', 'b', 'c', 'd'],
@@ -73,7 +78,7 @@
   };
 
   const viewer = new Cesium.Viewer('cesiumContainer', {
-    imageryProvider: imageryOptions.carto,
+    imageryProvider: imageryOptions.esri,
     baseLayerPicker: false,
     shouldAnimate: true
   });
