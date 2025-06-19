@@ -40,32 +40,66 @@
   <label for="imagerySelect">Карта:</label><br>
   <select id="imagerySelect">
     <option value="esri" selected>ESRI World Imagery</option>
-    <option value="carto">CartoDB Light</option>
+    <option value="esriSat">ESRI Satellite</option>
+    <option value="cartoLight">CartoDB Light</option>
+    <option value="cartoPositron">CartoDB Positron</option>
+    <option value="cartoDark">CartoDB Dark Matter</option>
     <option value="osm">OpenStreetMap</option>
-    <option value="stamen">Stamen Terrain</option>
+    <option value="stamenTerrain">Stamen Terrain</option>
+    <option value="stamenToner">Stamen Toner</option>
+    <option value="stamenWatercolor">Stamen Watercolor</option>
+    <option value="sentinel">Sentinel-2</option>
   </select>
 </div>
 <div id="cesiumContainer"></div>
 <script>
   const imageryOptions = {
-    esri: new Cesium.UrlTemplateImageryProvider({
+    esri: () => new Cesium.UrlTemplateImageryProvider({
       url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       credit: new Cesium.Credit('Tiles © Esri')
     }),
-    carto: new Cesium.UrlTemplateImageryProvider({
+    esriSat: () => new Cesium.UrlTemplateImageryProvider({
+      url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      credit: new Cesium.Credit('Tiles © Esri')
+    }),
+    cartoLight: () => new Cesium.UrlTemplateImageryProvider({
       url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
       subdomains: ['a', 'b', 'c', 'd'],
       credit: new Cesium.Credit('© OpenStreetMap & CartoDB')
     }),
-    osm: new Cesium.UrlTemplateImageryProvider({
+    cartoPositron: () => new Cesium.UrlTemplateImageryProvider({
+      url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+      subdomains: ['a', 'b', 'c', 'd'],
+      credit: new Cesium.Credit('© OpenStreetMap & CartoDB')
+    }),
+    cartoDark: () => new Cesium.UrlTemplateImageryProvider({
+      url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+      subdomains: ['a', 'b', 'c', 'd'],
+      credit: new Cesium.Credit('© OpenStreetMap & CartoDB')
+    }),
+    osm: () => new Cesium.UrlTemplateImageryProvider({
       url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       subdomains: ['a', 'b', 'c'],
       credit: new Cesium.Credit('© OpenStreetMap contributors')
     }),
-    stamen: new Cesium.UrlTemplateImageryProvider({
-      url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg',
+    stamenTerrain: () => new Cesium.UrlTemplateImageryProvider({
+      url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.png',
       subdomains: ['a', 'b', 'c', 'd'],
       credit: new Cesium.Credit('Map tiles by Stamen Design')
+    }),
+    stamenToner: () => new Cesium.UrlTemplateImageryProvider({
+      url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/toner/{z}/{x}/{y}.png',
+      subdomains: ['a', 'b', 'c', 'd'],
+      credit: new Cesium.Credit('Map tiles by Stamen Design')
+    }),
+    stamenWatercolor: () => new Cesium.UrlTemplateImageryProvider({
+      url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg',
+      subdomains: ['a', 'b', 'c', 'd'],
+      credit: new Cesium.Credit('Map tiles by Stamen Design')
+    }),
+    sentinel: () => new Cesium.UrlTemplateImageryProvider({
+      url: 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2021_3857/default/g/{z}/{y}/{x}.jpg',
+      credit: new Cesium.Credit('Sentinel-2 cloudless by EOX IT Services GmbH')
     })
   };
 
@@ -78,14 +112,14 @@
   };
 
   const viewer = new Cesium.Viewer('cesiumContainer', {
-    imageryProvider: imageryOptions.esri,
+    imageryProvider: imageryOptions.esri(),
     baseLayerPicker: false,
     shouldAnimate: true
   });
 
   document.getElementById('imagerySelect').addEventListener('change', function () {
     viewer.imageryLayers.removeAll();
-    viewer.imageryLayers.addImageryProvider(imageryOptions[this.value]);
+    viewer.imageryLayers.addImageryProvider(imageryOptions[this.value]());
   });
 
   document.getElementById('launchBtn').addEventListener('click', () => {
