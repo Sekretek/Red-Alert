@@ -115,6 +115,34 @@
     eilat: [34.95, 29.56]
   };
 
+  // Approximate city boundaries for highlighting impact areas
+  const cityPolygons = {
+    telaviv: [
+      34.70, 32.00,
+      34.90, 32.00,
+      34.90, 32.20,
+      34.70, 32.20
+    ],
+    haifa: [
+      34.94, 32.77,
+      35.04, 32.77,
+      35.04, 32.87,
+      34.94, 32.87
+    ],
+    beersheba: [
+      34.77, 31.22,
+      34.83, 31.22,
+      34.83, 31.30,
+      34.77, 31.30
+    ],
+    eilat: [
+      34.93, 29.53,
+      35.00, 29.53,
+      35.00, 29.58,
+      34.93, 29.58
+    ]
+  };
+
   const viewer = new Cesium.Viewer('cesiumContainer', {
     imageryProvider: imageryOptions.sentinel(),
     baseLayerPicker: false,
@@ -159,11 +187,8 @@
     viewer.entities.removeAll();
 
     viewer.entities.add({
-      position: Cesium.Cartesian3.fromDegrees(destination[0], destination[1]),
-      ellipse: {
-        semiMinorAxis: 30000,
-        semiMajorAxis: 30000,
-        height: 0,
+      polygon: {
+        hierarchy: Cesium.Cartesian3.fromDegreesArray(cityPolygons[targetKey]),
         material: Cesium.Color.RED.withAlpha(0.3),
         outline: true,
         outlineColor: Cesium.Color.RED
