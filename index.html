@@ -41,9 +41,7 @@
   <select id="tilesSelect">
     <option value="sentinel" selected>Sentinel-2</option>
     <option value="esri">ESRI World Imagery</option>
-    <option value="esriSat">ESRI Satellite</option>
     <option value="cartoLight">CartoDB Light</option>
-    <option value="cartoPositron">CartoDB Positron</option>
     <option value="cartoDark">CartoDB Dark Matter</option>
     <option value="osm">OpenStreetMap</option>
   </select>
@@ -61,16 +59,7 @@
       url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       credit: new Cesium.Credit('Tiles © Esri')
     }),
-    esriSat: () => new Cesium.UrlTemplateImageryProvider({
-      url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      credit: new Cesium.Credit('Tiles © Esri')
-    }),
     cartoLight: () => new Cesium.UrlTemplateImageryProvider({
-      url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-      subdomains: ['a', 'b', 'c', 'd'],
-      credit: new Cesium.Credit('© OpenStreetMap & CartoDB')
-    }),
-    cartoPositron: () => new Cesium.UrlTemplateImageryProvider({
       url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
       subdomains: ['a', 'b', 'c', 'd'],
       credit: new Cesium.Credit('© OpenStreetMap & CartoDB')
