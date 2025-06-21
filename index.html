@@ -108,6 +108,10 @@
     shouldAnimate: true
   });
 
+  viewer.camera.flyTo({
+    destination: Cesium.Cartesian3.fromDegrees(34.8, 31.5, 1500000)
+  });
+
   function updateLayers() {
     viewer.imageryLayers.removeAll();
     const base = document.getElementById('tilesSelect').value;
