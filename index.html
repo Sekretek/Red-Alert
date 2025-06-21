@@ -37,8 +37,8 @@
   </select><br>
   <button id="launchBtn">🔥 Запуск</button>
   <br><br>
-  <label for="imagerySelect">Карта:</label><br>
-  <select id="imagerySelect">
+  <label for="tilesSelect">Тайлы:</label><br>
+  <select id="tilesSelect">
     <option value="sentinel" selected>Sentinel-2</option>
     <option value="esri">ESRI World Imagery</option>
     <option value="esriSat">ESRI Satellite</option>
@@ -46,6 +46,12 @@
     <option value="cartoPositron">CartoDB Positron</option>
     <option value="cartoDark">CartoDB Dark Matter</option>
     <option value="osm">OpenStreetMap</option>
+  </select>
+  <br>
+  <label for="labelsSelect">Названия:</label><br>
+  <select id="labelsSelect">
+    <option value="esriLabels" selected>ESRI</option>
+    <option value="none">Без названий</option>
   </select>
 </div>
 <div id="cesiumContainer"></div>
@@ -103,15 +109,20 @@
     shouldAnimate: true
   });
 
-  viewer.imageryLayers.addImageryProvider(imageryOptions.esriLabels());
-
-  document.getElementById('imagerySelect').addEventListener('change', function () {
+  function updateLayers() {
     viewer.imageryLayers.removeAll();
-    viewer.imageryLayers.addImageryProvider(imageryOptions[this.value]());
-    if (this.value === 'sentinel') {
-      viewer.imageryLayers.addImageryProvider(imageryOptions.esriLabels());
+    const base = document.getElementById('tilesSelect').value;
+    const labels = document.getElementById('labelsSelect').value;
+    viewer.imageryLayers.addImageryProvider(imageryOptions[base]());
+    if (labels !== 'none') {
+      viewer.imageryLayers.addImageryProvider(imageryOptions[labels]());
     }
-  });
+  }
+
+  updateLayers();
+
+  document.getElementById('tilesSelect').addEventListener('change', updateLayers);
+  document.getElementById('labelsSelect').addEventListener('change', updateLayers);
 
   document.getElementById('launchBtn').addEventListener('click', () => {
     const originKey = document.getElementById('countrySelect').value;
