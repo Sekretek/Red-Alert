@@ -39,16 +39,13 @@
   <br><br>
   <label for="imagerySelect">Карта:</label><br>
   <select id="imagerySelect">
-    <option value="esri" selected>ESRI World Imagery</option>
+    <option value="sentinel" selected>Sentinel-2</option>
+    <option value="esri">ESRI World Imagery</option>
     <option value="esriSat">ESRI Satellite</option>
     <option value="cartoLight">CartoDB Light</option>
     <option value="cartoPositron">CartoDB Positron</option>
     <option value="cartoDark">CartoDB Dark Matter</option>
     <option value="osm">OpenStreetMap</option>
-    <option value="stamenTerrain">Stamen Terrain</option>
-    <option value="stamenToner">Stamen Toner</option>
-    <option value="stamenWatercolor">Stamen Watercolor</option>
-    <option value="sentinel">Sentinel-2</option>
   </select>
 </div>
 <div id="cesiumContainer"></div>
@@ -82,24 +79,13 @@
       subdomains: ['a', 'b', 'c'],
       credit: new Cesium.Credit('© OpenStreetMap contributors')
     }),
-    stamenTerrain: () => new Cesium.UrlTemplateImageryProvider({
-      url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.png',
-      subdomains: ['a', 'b', 'c', 'd'],
-      credit: new Cesium.Credit('Map tiles by Stamen Design')
-    }),
-    stamenToner: () => new Cesium.UrlTemplateImageryProvider({
-      url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/toner/{z}/{x}/{y}.png',
-      subdomains: ['a', 'b', 'c', 'd'],
-      credit: new Cesium.Credit('Map tiles by Stamen Design')
-    }),
-    stamenWatercolor: () => new Cesium.UrlTemplateImageryProvider({
-      url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg',
-      subdomains: ['a', 'b', 'c', 'd'],
-      credit: new Cesium.Credit('Map tiles by Stamen Design')
-    }),
     sentinel: () => new Cesium.UrlTemplateImageryProvider({
       url: 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2021_3857/default/g/{z}/{y}/{x}.jpg',
       credit: new Cesium.Credit('Sentinel-2 cloudless by EOX IT Services GmbH')
+    }),
+    esriLabels: () => new Cesium.UrlTemplateImageryProvider({
+      url: 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+      credit: new Cesium.Credit('© Esri Reference Labels')
     })
   };
 
@@ -112,14 +98,19 @@
   };
 
   const viewer = new Cesium.Viewer('cesiumContainer', {
-    imageryProvider: imageryOptions.esri(),
+    imageryProvider: imageryOptions.sentinel(),
     baseLayerPicker: false,
     shouldAnimate: true
   });
 
+  viewer.imageryLayers.addImageryProvider(imageryOptions.esriLabels());
+
   document.getElementById('imagerySelect').addEventListener('change', function () {
     viewer.imageryLayers.removeAll();
     viewer.imageryLayers.addImageryProvider(imageryOptions[this.value]());
+    if (this.value === 'sentinel') {
+      viewer.imageryLayers.addImageryProvider(imageryOptions.esriLabels());
+    }
   });
 
   document.getElementById('launchBtn').addEventListener('click', () => {
