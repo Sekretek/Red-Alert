@@ -51,7 +51,6 @@
   <select id="labelsSelect">
     <option value="esriLabels" selected>ESRI</option>
     <option value="none">Без названий</option>
-    <option value="openMapTilesLabels">OpenMapTiles</option>
   </select>
 </div>
 <div id="cesiumContainer"></div>
@@ -71,12 +70,10 @@
       subdomains: ['a', 'b', 'c', 'd'],
       credit: new Cesium.Credit('© OpenStreetMap & CartoDB')
     }),
-    blueMarble: () => new Cesium.WebMapTileServiceImageryProvider({
-      url: 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief/default/2014-12-01',
-      layer: 'BlueMarble_ShadedRelief',
-      style: 'default',
-      tileMatrixSetID: 'GoogleMapsCompatible_Level9',
-      format: 'image/jpeg',
+    blueMarble: () => new Cesium.TileMapServiceImageryProvider({
+      url: 'https://s3.amazonaws.com/eox-a.s3-eu-central-1.amazonaws.com/blue-marble',
+      fileExtension: 'jpg',
+      maximumLevel: 8,
       credit: new Cesium.Credit('NASA Blue Marble')
     }),
     osm: () => new Cesium.UrlTemplateImageryProvider({
@@ -91,10 +88,6 @@
     esriLabels: () => new Cesium.UrlTemplateImageryProvider({
       url: 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
       credit: new Cesium.Credit('© Esri Reference Labels')
-    }),
-    openMapTilesLabels: () => new Cesium.UrlTemplateImageryProvider({
-      url: 'https://maps.tilehosting.com/styles/basic/256/{z}/{x}/{y}.png?key=get_your_own_OpIi9ZULNHzrEsA7',
-      credit: new Cesium.Credit('© OpenMapTiles')
     })
   };
 
