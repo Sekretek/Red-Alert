@@ -35,6 +35,13 @@
     <option value="lebanon">Ливан</option>
     <option value="yemen">Йемен</option>
   </select><br>
+  <label for="targetSelect">🎯 Цель в Израиле:</label><br>
+  <select id="targetSelect">
+    <option value="telaviv">Тель-Авив</option>
+    <option value="haifa">Хайфа</option>
+    <option value="beersheba">Беэр-Шева</option>
+    <option value="eilat">Эйлат</option>
+  </select><br>
   <button id="launchBtn">🔥 Запуск</button>
   <br><br>
   <label for="tilesSelect">Тайлы:</label><br>
@@ -94,12 +101,18 @@
     })
   };
 
-  const targets = {
-    israel: [34.8, 31.5],
+  const origins = {
     iran: [51.4, 35.7],
     syria: [38.5, 35.2],
     lebanon: [35.5, 33.9],
     yemen: [44.2, 15.4]
+  };
+
+  const israelTargets = {
+    telaviv: [34.78, 32.08],
+    haifa: [34.99, 32.82],
+    beersheba: [34.79, 31.25],
+    eilat: [34.95, 29.56]
   };
 
   const viewer = new Cesium.Viewer('cesiumContainer', {
@@ -129,8 +142,9 @@
 
   document.getElementById('launchBtn').addEventListener('click', () => {
     const originKey = document.getElementById('countrySelect').value;
-    const origin = targets[originKey];
-    const destination = targets.israel;
+    const targetKey = document.getElementById('targetSelect').value;
+    const origin = origins[originKey];
+    const destination = israelTargets[targetKey];
 
     const startTime = Cesium.JulianDate.now();
     const stopTime = Cesium.JulianDate.addSeconds(startTime, 10, new Cesium.JulianDate());
@@ -143,6 +157,18 @@
 
     viewer.timeline.zoomTo(startTime, stopTime);
     viewer.entities.removeAll();
+
+    viewer.entities.add({
+      position: Cesium.Cartesian3.fromDegrees(destination[0], destination[1]),
+      ellipse: {
+        semiMinorAxis: 30000,
+        semiMajorAxis: 30000,
+        height: 0,
+        material: Cesium.Color.RED.withAlpha(0.3),
+        outline: true,
+        outlineColor: Cesium.Color.RED
+      }
+    });
 
     const steps = 100;
     const positionProperty = new Cesium.SampledPositionProperty();
