@@ -20,7 +20,7 @@
       z-index: 5;
       font-family: sans-serif;
     }
-    select, button {
+    select, button, input {
       margin-top: 4px;
       font-size: 14px;
     }
@@ -35,13 +35,8 @@
     <option value="lebanon">Ливан</option>
     <option value="yemen">Йемен</option>
   </select><br>
-  <label for="targetSelect">🎯 Цель в Израиле:</label><br>
-  <select id="targetSelect">
-    <option value="telaviv">Тель-Авив</option>
-    <option value="haifa">Хайфа</option>
-    <option value="beersheba">Беэр-Шева</option>
-    <option value="eilat">Эйлат</option>
-  </select><br>
+  <label for="targetInput">🎯 Цель в Израиле:</label><br>
+  <input id="targetInput" list="targetsList" placeholder="Начните вводить название"><datalist id="targetsList"></datalist><br>
   <button id="launchBtn">🔥 Запуск</button>
   <br><br>
   <label for="tilesSelect">Тайлы:</label><br>
@@ -137,16 +132,15 @@
         });
       });
 
-      const select = document.getElementById('targetSelect');
-      select.innerHTML = '';
+      const datalist = document.getElementById('targetsList');
+      datalist.innerHTML = '';
       Object.keys(groups).sort().forEach(name => {
         const g = groups[name];
         israelTargets[name] = [g.lonSum / g.count, g.latSum / g.count];
         cityPolygons[name] = g.polys;
         const option = document.createElement('option');
         option.value = name;
-        option.textContent = name;
-        select.appendChild(option);
+        datalist.appendChild(option);
       });
     });
 
@@ -177,7 +171,7 @@
 
   document.getElementById('launchBtn').addEventListener('click', () => {
     const originKey = document.getElementById('countrySelect').value;
-    const targetKey = document.getElementById('targetSelect').value;
+    const targetKey = document.getElementById('targetInput').value.trim();
     const origin = origins[originKey];
     const destination = israelTargets[targetKey];
     if (!destination) return;
@@ -195,12 +189,17 @@
     viewer.entities.removeAll();
 
     (cityPolygons[targetKey] || []).forEach(poly => {
+      const pulseColor = new Cesium.CallbackProperty(function(time) {
+        const seconds = Cesium.JulianDate.secondsDifference(time, startTime);
+        const alpha = 0.5 + 0.5 * Math.sin(seconds * 4);
+        return Cesium.Color.RED.withAlpha(alpha);
+      }, false);
       viewer.entities.add({
         polygon: {
           hierarchy: Cesium.Cartesian3.fromDegreesArray(poly),
           material: Cesium.Color.RED.withAlpha(0.3),
           outline: true,
-          outlineColor: Cesium.Color.RED
+          outlineColor: pulseColor
         }
       });
     });
