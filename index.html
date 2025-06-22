@@ -108,40 +108,47 @@
     yemen: [44.2, 15.4]
   };
 
-  const israelTargets = {
-    telaviv: [34.78, 32.08],
-    haifa: [34.99, 32.82],
-    beersheba: [34.79, 31.25],
-    eilat: [34.95, 29.56]
-  };
+  // Will be filled from GeoJSON with real city polygons
+  let israelTargets = {};
+  let cityPolygons = {};
 
-  // Approximate city boundaries for highlighting impact areas
-  const cityPolygons = {
-    telaviv: [
-      34.70, 32.00,
-      34.90, 32.00,
-      34.90, 32.20,
-      34.70, 32.20
-    ],
-    haifa: [
-      34.94, 32.77,
-      35.04, 32.77,
-      35.04, 32.87,
-      34.94, 32.87
-    ],
-    beersheba: [
-      34.77, 31.22,
-      34.83, 31.22,
-      34.83, 31.30,
-      34.77, 31.30
-    ],
-    eilat: [
-      34.93, 29.53,
-      35.00, 29.53,
-      35.00, 29.58,
-      34.93, 29.58
-    ]
-  };
+  fetch('hotosm_isr_populated_places_polygons_geojson.geojson')
+    .then(r => r.json())
+    .then(data => {
+      const groups = {};
+      data.features.forEach(f => {
+        const props = f.properties || {};
+        const name = props['name:en'] || props.name || props['name:he'];
+        if (!name) return;
+        const geoms = f.geometry.type === 'MultiPolygon' ? f.geometry.coordinates : [f.geometry.coordinates];
+        if (!groups[name]) {
+          groups[name] = {lonSum: 0, latSum: 0, count: 0, polys: []};
+        }
+        geoms.forEach(poly => {
+          const outer = poly[0];
+          const flat = [];
+          outer.forEach(pt => {
+            flat.push(pt[0], pt[1]);
+            groups[name].lonSum += pt[0];
+            groups[name].latSum += pt[1];
+            groups[name].count += 1;
+          });
+          groups[name].polys.push(flat);
+        });
+      });
+
+      const select = document.getElementById('targetSelect');
+      select.innerHTML = '';
+      Object.keys(groups).sort().forEach(name => {
+        const g = groups[name];
+        israelTargets[name] = [g.lonSum / g.count, g.latSum / g.count];
+        cityPolygons[name] = g.polys;
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+      });
+    });
 
   const viewer = new Cesium.Viewer('cesiumContainer', {
     imageryProvider: imageryOptions.sentinel(),
@@ -173,6 +180,7 @@
     const targetKey = document.getElementById('targetSelect').value;
     const origin = origins[originKey];
     const destination = israelTargets[targetKey];
+    if (!destination) return;
 
     const startTime = Cesium.JulianDate.now();
     const stopTime = Cesium.JulianDate.addSeconds(startTime, 10, new Cesium.JulianDate());
@@ -186,13 +194,15 @@
     viewer.timeline.zoomTo(startTime, stopTime);
     viewer.entities.removeAll();
 
-    viewer.entities.add({
-      polygon: {
-        hierarchy: Cesium.Cartesian3.fromDegreesArray(cityPolygons[targetKey]),
-        material: Cesium.Color.RED.withAlpha(0.3),
-        outline: true,
-        outlineColor: Cesium.Color.RED
-      }
+    (cityPolygons[targetKey] || []).forEach(poly => {
+      viewer.entities.add({
+        polygon: {
+          hierarchy: Cesium.Cartesian3.fromDegreesArray(poly),
+          material: Cesium.Color.RED.withAlpha(0.3),
+          outline: true,
+          outlineColor: Cesium.Color.RED
+        }
+      });
     });
 
     const steps = 100;
