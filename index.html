@@ -212,10 +212,7 @@
         polyline: {
           positions: positions,
           width: 10,
-          material: new Cesium.PolylineGlowMaterialProperty({
-            glowPower: 0.2,
-            color: pulseColor
-          })
+          material: new Cesium.PolylineGlowMaterialProperty(pulseColor)
         }
       });
     });
