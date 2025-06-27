@@ -192,6 +192,7 @@
       const pulseColor = new Cesium.CallbackProperty(function(time) {
         const seconds = Cesium.JulianDate.secondsDifference(time, startTime);
         const alpha = 0.5 + 0.5 * Math.sin(seconds * 4);
+        return Cesium.Color.RED.withAlpha(alpha);
         return Cesium.Color.fromCssColorString('#8b0000').withAlpha(alpha);
       }, false);
 
@@ -209,21 +210,9 @@
       positions.push(positions[0]);
 
       viewer.entities.add({
-        polygon: {
-          hierarchy: Cesium.Cartesian3.fromDegreesArray(poly),
-          material: Cesium.Color.RED.withAlpha(0.3)
-        }
-      });
-
-      const positions = [];
-      for (let i = 0; i < poly.length; i += 2) {
-        positions.push(Cesium.Cartesian3.fromDegrees(poly[i], poly[i + 1]));
-      }
-      positions.push(positions[0]);
-
-      viewer.entities.add({
         polyline: {
           positions: positions,
+          width: 5,
           width: 10,
           material: new Cesium.PolylineGlowMaterialProperty({
             glowPower: 0.2,
