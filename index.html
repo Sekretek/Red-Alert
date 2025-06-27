@@ -107,7 +107,7 @@
   let israelTargets = {};
   let cityPolygons = {};
 
-  fetch('hotosm_isr_populated_places_polygons_geojson.geojson')
+  fetch('gis_osm_places_a_free_1.json')
     .then(r => r.json())
     .then(data => {
       const groups = {};
