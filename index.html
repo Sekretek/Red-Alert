@@ -209,6 +209,19 @@
       positions.push(positions[0]);
 
       viewer.entities.add({
+        polygon: {
+          hierarchy: Cesium.Cartesian3.fromDegreesArray(poly),
+          material: Cesium.Color.RED.withAlpha(0.3)
+        }
+      });
+
+      const positions = [];
+      for (let i = 0; i < poly.length; i += 2) {
+        positions.push(Cesium.Cartesian3.fromDegrees(poly[i], poly[i + 1]));
+      }
+      positions.push(positions[0]);
+
+      viewer.entities.add({
         polyline: {
           positions: positions,
           width: 10,
@@ -216,6 +229,7 @@
             glowPower: 0.2,
             color: pulseColor
           })
+        }
       });
     });
 
