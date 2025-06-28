@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Rocket Following Trajectory</title>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body, #cesiumContainer {
+      width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+    }
+    #controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(255,255,255,0.85);
+      padding: 10px;
+      border-radius: 6px;
+      z-index: 5;
+      font-family: sans-serif;
+    }
+    select, button, input {
+      margin-top: 4px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+<div id="controls">
+  <label for="countrySelect">🚀 Старт из страны:</label><br>
+  <select id="countrySelect">
+    <option value="iran">Иран</option>
+    <option value="syria">Сирия</option>
+    <option value="lebanon">Ливан</option>
+    <option value="yemen">Йемен</option>
+  </select><br>
+  <label for="targetInput">🎯 Цель в Израиле:</label><br>
+  <input id="targetInput" list="targetsList" placeholder="Начните вводить название"><datalist id="targetsList"></datalist><br>
+  <button id="launchBtn">🔥 Запуск</button>
+  <br><br>
+  <label for="tilesSelect">Тайлы:</label><br>
+  <select id="tilesSelect">
+    <option value="sentinel" selected>Sentinel-2</option>
+    <option value="esri">ESRI World Imagery</option>
+    <option value="cartoLight">CartoDB Light</option>
+    <option value="cartoDark">CartoDB Dark Matter</option>
+    <option value="osm">OpenStreetMap</option>
+    <option value="blueMarble">Blue Marble</option>
+  </select>
+  <br>
+  <label for="labelsSelect">Названия:</label><br>
+  <select id="labelsSelect">
+    <option value="esriLabels" selected>ESRI</option>
+    <option value="none">Без названий</option>
+  </select>
+</div>
+<div id="cesiumContainer"></div>
+<script>
+  const imageryOptions = {
+    esri: () => new Cesium.UrlTemplateImageryProvider({
+      url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      credit: new Cesium.Credit('Tiles © Esri')
+    }),
+    cartoLight: () => new Cesium.UrlTemplateImageryProvider({
+      url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+      subdomains: ['a', 'b', 'c', 'd'],
+      credit: new Cesium.Credit('© OpenStreetMap & CartoDB')
+    }),
+    cartoDark: () => new Cesium.UrlTemplateImageryProvider({
+      url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+      subdomains: ['a', 'b', 'c', 'd'],
+      credit: new Cesium.Credit('© OpenStreetMap & CartoDB')
+    }),
+    blueMarble: () => new Cesium.WebMapTileServiceImageryProvider({
+      url: 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief/default/2014-12-01/GoogleMapsCompatible_Level8/{TileMatrix}/{TileRow}/{TileCol}.jpg',
+      layer: 'BlueMarble_ShadedRelief',
+      style: 'default',
+      format: 'image/jpeg',
+      tileMatrixSetID: 'GoogleMapsCompatible_Level8',
+      maximumLevel: 8,
+      credit: new Cesium.Credit('NASA Blue Marble via GIBS')
+    }),
+    osm: () => new Cesium.UrlTemplateImageryProvider({
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      subdomains: ['a', 'b', 'c'],
+      credit: new Cesium.Credit('© OpenStreetMap contributors')
+    }),
+    sentinel: () => new Cesium.UrlTemplateImageryProvider({
+      url: 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2021_3857/default/g/{z}/{y}/{x}.jpg',
+      credit: new Cesium.Credit('Sentinel-2 cloudless by EOX IT Services GmbH')
+    }),
+    esriLabels: () => new Cesium.UrlTemplateImageryProvider({
+      url: 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+      credit: new Cesium.Credit('© Esri Reference Labels')
+    })
+  };
+
+  const origins = {
+    iran: [51.4, 35.7],
+    syria: [38.5, 35.2],
+    lebanon: [35.5, 33.9],
+    yemen: [44.2, 15.4]
+  };
+
+  // Will be filled from GeoJSON with real city polygons
+  let israelTargets = {};
+  let cityPolygons = {};
+
+  fetch('gis_osm_places_a_free_1.json')
+    .then(r => r.json())
+    .then(data => {
+      const groups = {};
+      data.features.forEach(f => {
+        const props = f.properties || {};
+        const name = props['name:en'] || props.name || props['name:he'];
+        if (!name) return;
+        const geoms = f.geometry.type === 'MultiPolygon' ? f.geometry.coordinates : [f.geometry.coordinates];
+        if (!groups[name]) {
+          groups[name] = {lonSum: 0, latSum: 0, count: 0, polys: []};
+        }
+        geoms.forEach(poly => {
+          const outer = poly[0];
+          const flat = [];
+          outer.forEach(pt => {
+            flat.push(pt[0], pt[1]);
+            groups[name].lonSum += pt[0];
+            groups[name].latSum += pt[1];
+            groups[name].count += 1;
+          });
+          groups[name].polys.push(flat);
+        });
+      });
+
+      const datalist = document.getElementById('targetsList');
+      datalist.innerHTML = '';
+      Object.keys(groups).sort().forEach(name => {
+        const g = groups[name];
+        israelTargets[name] = [g.lonSum / g.count, g.latSum / g.count];
+        cityPolygons[name] = g.polys;
+        const option = document.createElement('option');
+        option.value = name;
+        datalist.appendChild(option);
+      });
+    });
+
+  const viewer = new Cesium.Viewer('cesiumContainer', {
+    imageryProvider: imageryOptions.sentinel(),
+    baseLayerPicker: false,
+    shouldAnimate: true
+  });
+
+  viewer.camera.flyTo({
+    destination: Cesium.Cartesian3.fromDegrees(34.8, 31.5, 1500000)
+  });
+
+  function updateLayers() {
+    viewer.imageryLayers.removeAll();
+    const base = document.getElementById('tilesSelect').value;
+    const labels = document.getElementById('labelsSelect').value;
+    viewer.imageryLayers.addImageryProvider(imageryOptions[base]());
+    if (labels !== 'none') {
+      viewer.imageryLayers.addImageryProvider(imageryOptions[labels]());
+    }
+  }
+
+  updateLayers();
+
+  document.getElementById('tilesSelect').addEventListener('change', updateLayers);
+  document.getElementById('labelsSelect').addEventListener('change', updateLayers);
+
+  document.getElementById('launchBtn').addEventListener('click', () => {
+    const originKey = document.getElementById('countrySelect').value;
+    const targetKey = document.getElementById('targetInput').value.trim();
+    const origin = origins[originKey];
+    const destination = israelTargets[targetKey];
+    if (!destination) return;
+
+    const startTime = Cesium.JulianDate.now();
+    const stopTime = Cesium.JulianDate.addSeconds(startTime, 10, new Cesium.JulianDate());
+    viewer.clock.startTime = startTime.clone();
+    viewer.clock.stopTime = stopTime.clone();
+    viewer.clock.currentTime = startTime.clone();
+    viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
+    viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK_MULTIPLIER;
+    viewer.clock.multiplier = 2;
+
+    viewer.timeline.zoomTo(startTime, stopTime);
+    viewer.entities.removeAll();
+
+    
+(cityPolygons[targetKey] || []).forEach(poly => {
+  const pulseColor = new Cesium.CallbackProperty(function(time) {
+    const seconds = Cesium.JulianDate.secondsDifference(time, startTime);
+    const alpha = 0.4 + 0.6 * Math.sin(seconds * 4);
+    return Cesium.Color.fromCssColorString('#8b0000').withAlpha(alpha);
+  }, false);
+
+  const positions = [];
+  for (let i = 0; i < poly.length; i += 2) {
+    positions.push(Cesium.Cartesian3.fromDegrees(poly[i], poly[i + 1]));
+  }
+  positions.push(positions[0]);
+
+  viewer.entities.add({
+    polyline: {
+      positions: positions,
+      width: 4,
+      material: pulseColor
+    }
+  });
+});
+
+      const positions = [];
+      for (let i = 0; i < poly.length; i += 2) {
+        positions.push(Cesium.Cartesian3.fromDegrees(poly[i], poly[i + 1]));
+      }
+      positions.push(positions[0]);
+
+      viewer.entities.add({
+        polyline: {
+          positions: positions,
+          width: 5,
+          width: 10,
+          material: new Cesium.PolylineGlowMaterialProperty({
+            glowPower: 0.2,
+            color: pulseColor
+          })
+        }
+      });
+    });
+
+    const steps = 100;
+    const positionProperty = new Cesium.SampledPositionProperty();
+    const points = [];
+
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const lon = origin[0] * (1 - t) + destination[0] * t;
+      const lat = origin[1] * (1 - t) + destination[1] * t;
+      const height = 0 + 100000 * Math.sin(Math.PI * t);
+      const time = Cesium.JulianDate.addSeconds(startTime, i * 0.1, new Cesium.JulianDate());
+      const position = Cesium.Cartesian3.fromDegrees(lon, lat, height);
+      positionProperty.addSample(time, position);
+      points.push(position);
+    }
+
+    viewer.entities.add({
+      polyline: {
+        positions: points,
+        width: 4,
+        material: Cesium.Color.RED
+      }
+    });
+
+    viewer.entities.add({
+      availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+        start: startTime,
+        stop: stopTime
+      })]),
+      position: positionProperty,
+      orientation: new Cesium.VelocityOrientationProperty(positionProperty),
+      model: {
+        uri: 'Rocket.glb',
+        scale: 100.0,
+        minimumPixelSize: 64
+      },
+      path: {
+        resolution: 1,
+        material: new Cesium.PolylineGlowMaterialProperty({glowPower: 0.1, color: Cesium.Color.YELLOW}),
+        width: 2
+      }
+    });
+
+    viewer.clock.shouldAnimate = true;
+  });
+</script>
+</body>
+</html>
