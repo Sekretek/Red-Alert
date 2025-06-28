@@ -192,7 +192,6 @@
       const pulseColor = new Cesium.CallbackProperty(function(time) {
         const seconds = Cesium.JulianDate.secondsDifference(time, startTime);
         const alpha = 0.5 + 0.5 * Math.sin(seconds * 4);
-        return Cesium.Color.RED.withAlpha(alpha);
         return Cesium.Color.fromCssColorString('#8b0000').withAlpha(alpha);
       }, false);
 
@@ -214,10 +213,7 @@
           positions: positions,
           width: 5,
           width: 10,
-          material: new Cesium.PolylineGlowMaterialProperty({
-            glowPower: 0.2,
-            color: pulseColor
-          })
+          material: new Cesium.PolylineGlowMaterialProperty(pulseColor)
         }
       });
     });
